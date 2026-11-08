@@ -1,0 +1,13 @@
+GivenName,Surname,SamAccountName,Department,Group
+Sipho,Khumalo,khumalos,Finance,GG_Finance
+Nomsa,Mokoena,mokoenan,Finance,GG_Finance
+Thabo,Sithole,sitholet,Technical Services,GG_TechnicalServices
+Lerato,Molefe,molefel,Corporate Services,GG_CorporateServices
+Ayanda,Cele,celea,Community Services,GG_CommunityServices
+Zodwa,Maseko,masekoz,Planning and Economic Development,GG_PlanningEconomicDev
+Kagiso,Tau,tauk,ICT,GG_ICT
+Busisiwe,Radebe,radebeb,Municipal Manager Office,GG_MunicipalManagerOffice
+Mandla,Zwane,zwanem,Technical Services,GG_TechnicalServices
+Naledi,Pietersen,pietersenn,Community Services,GG_CommunityServices
+Lungile,Dube,dubel,ICT,GG_ICT
+Pat,Nkosi,nkosip,Housing,GG_Housing

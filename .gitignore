@@ -1,0 +1,13 @@
+# Keep large VM files, raw screenshots and secrets out of the repo
+*.iso
+*.vdi
+*.vmdk
+*.ova
+*.vbox
+*.pfx
+*.key
+*.pem
+secrets/
+raw_screenshots/
+.DS_Store
+Thumbs.db
