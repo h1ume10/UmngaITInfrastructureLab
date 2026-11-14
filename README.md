@@ -1,12 +1,12 @@
 # Umnga IT Infrastructure Lab
 
-A small Windows Server 2025 environment for a made up municipality, built in a personal VirtualBox lab. Each project adds a layer on top of the one before: servers, directory and policy, everyday services, file storage and automation. Every README records what I built, why I chose it, what I saw, and what I did not test.
+A small Windows Server 2025 environment for a made up municipality, built in a personal VirtualBox lab. Each project adds a layer on top of the one before: servers, directory and policy, everyday services, file storage, automation, server care and access control. Every README records what I built, why I chose it, what I saw, and what I did not test.
 
 Umnga Local Municipality is fictional. It has about 60 office staff in seven departments: Municipal Manager's Office, Finance, Corporate Services, Community Services, Technical Services, Planning and Economic Development, and ICT. It is not based on any real municipality. The domain is umnga.local (NetBIOS name UMNGA). No employer systems, tenants or data are used anywhere in this repository, and every person in it is invented.
 
 ## What exists now
 
-Three servers on an isolated network, one domain, seven departments with their own groups and file shares, a PowerShell script that onboards new staff from a CSV file, and a care routine for the file server that covers updates, logs, performance, firewall, antivirus and backup. The domain holds 17 users. All six projects are complete.
+Three servers on an isolated network, one domain, seven departments with their own groups and file shares, a PowerShell script that onboards new staff from a CSV file, a care routine for the file server that covers updates, logs, performance, firewall, antivirus and backup, and an access review with role groups, an account lockout policy and a report of who holds admin rights. The domain holds 18 users. All seven projects are complete.
 
 ## Architecture
 
@@ -20,14 +20,18 @@ flowchart TB
     end
     subgraph AD["Domain umnga.local, NetBIOS name UMNGA"]
         UM["OU Umnga"]
-        DEP["OU Departments: 7 department OUs, 17 users"]
+        DEP["OU Departments: 7 department OUs, 18 users"]
         SRV["OU Servers"]
-        GRP["OU Groups: 7 GG_ security groups"]
+        GRP["OU Groups: 9 GG_ groups and 1 DL_ group"]
         UM --> DEP
         UM --> SRV
         UM --> GRP
         GPO["GPO: Umnga Servers Logon Notice"]
         GPO -->|"linked to"| SRV
+        GPO2["GPO: Umnga Servers Local Admins"]
+        GPO2 -->|"linked to"| SRV
+        LOCK["Default Domain Policy: lockout after 5 attempts for 15 minutes"]
+        UM -.->|"applies to the domain"| LOCK
     end
     DC1 -->|"hosts directory"| UM
     DC1 -.->|"5 FSMO roles"| AD
@@ -64,6 +68,15 @@ flowchart TB
     SVR1 -->|"protected by"| FW
     SVR1 -->|"scanned by"| DEF
     SVR1 -->|"backed up to"| BKP
+    subgraph ACC["Access review"]
+        HD["GG_ICT_Helpdesk: unlock accounts and reset passwords on OU Departments"]
+        SA["GG_ICT_ServerAdmins"]
+        DL["DL_Servers_LocalAdmins"]
+        SA -->|"member of"| DL
+    end
+    DL -->|"added to local Administrators by GPO"| SVR1
+    DL -->|"added to local Administrators by GPO"| CORE1
+    HD -.->|"delegated on"| DEP
 ```
 
 ## Projects
@@ -76,8 +89,9 @@ flowchart TB
 | 04 | [Departmental file server](04%20Departmental%20file%20server) | A mirrored storage pool and seven department shares locked down with NTFS |
 | 05 | [Onboarding automation](05%20Onboarding%20automation) | A PowerShell script that creates new staff from a CSV, safely and repeatably |
 | 06 | [Server care routine](06%20Server%20care%20routine) | A routine for updates, logs, performance, firewall, Defender and backup, with a restore test |
+| 07 | [Access review](07%20Access%20review) | Role groups, an account lockout policy, a delegated unlock right and a report of who holds admin rights |
 
-All six projects share the [naming and IP standard](docs/Naming%20and%20IP%20standard.md), which grew with them.
+All seven projects share the [naming and IP standard](docs/Naming%20and%20IP%20standard.md), which grew with them.
 
 ## The story so far
 
@@ -105,6 +119,10 @@ Creating accounts was the most repeated job, so I turned it into a script. New-U
 
 A server that nobody looks after fails in quiet ways, so I wrote down what to look at on UMNGA-SVR1 and proved each check once. Updates came through a temporary NAT card that I removed afterwards. I built a custom view in Event Viewer and found where Windows records an update install. A baseline only counted when the server was idle, which took a long wait for Windows to finish servicing, and I kept the busy captures to show the difference. The built in web rule was open to every address, so I replaced it with one that only accepts UmngaNet, and proved it both ways. Defender caught the EICAR test string and left events 1116 and 1117. Windows Server Backup copied a test folder to a separate disk, and a file I deleted on purpose came back with its text. The README is honest about what is missing: one cumulative update I never saw installed, a backup on the same laptop, and several events I did not diagnose.
 
+### 07 Access review
+
+Two questions kept landing on ICT: why are staff locked out, and who holds powerful rights on the servers? At the start the domain never locked an account, because the threshold was 0, and every admin job was done as one shared Administrator. I built role groups in the pattern accounts, global groups, a domain local group, permission, and set a lockout policy of 5 attempts and 15 minutes. A typo in a test account's logon name taught me that error 1326 does not tell you whether the user exists, and the corrected test locked the account on the sixth try and event 4740 named the computer that caused it. I delegated unlock and password reset on the department OUs to a helpdesk group, and the helpdesk account could unlock a user and could not add itself to Domain Admins. A Group Policy Preferences item made a server admin group a local administrator on both servers, and a before and after test showed the change. I then read out who holds admin rights and sign in rights on all three machines, and showed that group changes are logged but every one is logged as the shared Administrator. The main finding is that the helpdesk's password reset reaches the OU where the server admin account lives. I did not test that path.
+
 ## How each project is laid out
 
 Every project folder has the same parts:
@@ -113,7 +131,7 @@ Every project folder has the same parts:
 2. evidence: screenshots and a captions file
 3. Troubleshooting log.md: what broke, what caused it, how I fixed it, and what I did not record
 4. scripts: only where I wrote and ran a script (project 05)
-5. a one page deliverable where the project ends in a routine (project 06)
+5. a one page deliverable where the project ends in a routine or a report (projects 06 and 07)
 
 Each README has a Limitations section. I list what I did not test, such as a real sign in or a failed mirror disk, and I do not let a calculation or a console view stand in for a test.
 
@@ -122,6 +140,10 @@ Each README has a Limitations section. I list what I did not test, such as a rea
 1. Test DHCP, the department shares and a new user sign in from a Windows 11 client, which does not exist in the lab yet.
 2. Patch and back up UMNGA-DC1 and UMNGA-CORE1 with the same routine, and move the backup copy off the laptop.
 3. Find out what the Kernel-Boot and Hyper-V events mean before the Hyper-V project.
+4. Move admin accounts to an OU the helpdesk cannot reach, and test that a helpdesk account cannot reset their passwords.
+5. Create named admin accounts for each administrator, and keep the shared Administrator as a protected break glass account.
+6. Move the lockout policy into its own GPO, and remove Users from the local sign in right on the member servers.
+7. Enable and read logon and privilege use auditing, and send the logs to one place.
 
 ## Safety rules for this repository
 

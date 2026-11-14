@@ -49,7 +49,7 @@ Names in use: UMNGA-DC1, UMNGA-SVR1, UMNGA-CORE1.
 
 1. GPO names follow the pattern Umnga, then the target, then the purpose, in title case. Example in use: Umnga Servers Logon Notice.
 2. A GPO is linked only to the OU it is meant for. The domain link is kept for the Default Domain Policy.
-3. I do not edit the Default Domain Policy or the Default Domain Controllers Policy. Changes go in new GPOs.
+3. I do not edit the Default Domain Policy or the Default Domain Controllers Policy. Changes go in new GPOs, with one exception: the account lockout policy in project 07 (see Access review naming).
 
 ## Core services naming (project 03)
 
@@ -88,10 +88,22 @@ Names in use: UMNGA-DC1, UMNGA-SVR1, UMNGA-CORE1.
 5. The test folders are C:\UmngaBackupTest for backup and restore, and C:\EicarTest for the antivirus test. The EICAR folder is removed straight after the test. Both hold only invented content.
 6. Servers take their time from UMNGA-DC1, which the care routine checks with w32tm.
 
+## Access review naming (project 07)
+
+1. Role groups: GG_ICT_ followed by the role, global scope, type Security, held in OU Groups. In use: GG_ICT_Helpdesk and GG_ICT_ServerAdmins. They hold accounts and nothing else.
+2. Domain local groups: DL_ followed by the target and the right, domain local scope, type Security, held in OU Groups. In use: DL_Servers_LocalAdmins. It receives global groups and is the only name that a permission or a Group Policy item points to.
+3. The pattern is accounts into global groups, global groups into a domain local group, permission to the domain local group. A person who changes role moves between global groups.
+4. GPO in use: Umnga Servers Local Admins, linked to OU Servers. It uses a Group Policy Preferences local group item with the action Update and adds DL_Servers_LocalAdmins to the local Administrators group. I do not use Restricted Groups for this, because it replaces the whole membership.
+5. Account lockout policy, set in the Default Domain Policy as the one exception to the rule above, because domain account policies apply only from a GPO linked to the domain: threshold 5, duration 15 minutes, reset counter 15 minutes. A separate GPO with a higher link order is planned.
+6. Delegation: GG_ICT_Helpdesk may reset user passwords and read and write lockoutTime on user objects in OU Departments. It has no right on group membership.
+7. Test account: lockoutt (Test Lockout) in OU ICT, invented and temporary. A test never uses the built in Administrator.
+8. The role users tauk (helpdesk) and dubel (server admin) are the lab's invented stand ins. Named admin accounts for each administrator are planned and do not exist yet.
+
 ## Snapshots
 
 1. I take a snapshot only after a state is checked, and name it after the state, for example "Stage1 baseline clean".
 2. A snapshot taken before a risky change is named "Stage N before" followed by the change, for example "Stage 3 before DHCP", "Stage 6 before NAT" or "Stage 6 before updates". N is the build step in the order I built the lab. The VM title bar shows the current snapshot name, so these names appear in some screenshots.
+3. A snapshot taken after a stage is checked is named "Stage N verified". Project 07 screenshots show "Stage 7 start", the state before the access review, and the checked state is "Stage 7 verified".
 
 ## Rules
 
