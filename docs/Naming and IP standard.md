@@ -79,10 +79,19 @@ Names in use: UMNGA-DC1, UMNGA-SVR1, UMNGA-CORE1.
 4. Logs go to C:\Scripts\logs. Each run writes a file named onboarding_ followed by the date and time as yyyyMMdd_HHmmss and the extension .log. Logs never contain passwords.
 5. The starting password is typed at a prompt on every run. It is never stored in a script, a CSV, a log or this repository.
 
+## Server care naming (project 06)
+
+1. A temporary NAT adapter is called Ethernet 2 inside Windows and Adapter 2 in VirtualBox. It goes on one member server only, never on the domain controller. It does not register in DNS, and it is removed when the job is done. Its address, 10.0.3.15, is the VirtualBox default and is not part of UmngaNet.
+2. Firewall rules created by ICT start with Umnga, then the service and the source, for example Umnga Intranet HTTP from UmngaNet. The built in rules keep their Windows names.
+3. The Event Viewer custom view is named Umnga Errors and Warnings.
+4. The backup disk is a virtual disk file named UMNGA-SVR1-backup.vdi, 3 GB, dynamically allocated. Inside Windows it is drive F:, NTFS, volume label UmngaBackup.
+5. The test folders are C:\UmngaBackupTest for backup and restore, and C:\EicarTest for the antivirus test. The EICAR folder is removed straight after the test. Both hold only invented content.
+6. Servers take their time from UMNGA-DC1, which the care routine checks with w32tm.
+
 ## Snapshots
 
 1. I take a snapshot only after a state is checked, and name it after the state, for example "Stage1 baseline clean".
-2. A snapshot taken before a risky change is named "Stage N before" followed by the change, for example "Stage 3 before DHCP". N is the build step in the order I built the lab. The VM title bar shows the current snapshot name, so these names appear in some screenshots.
+2. A snapshot taken before a risky change is named "Stage N before" followed by the change, for example "Stage 3 before DHCP", "Stage 6 before NAT" or "Stage 6 before updates". N is the build step in the order I built the lab. The VM title bar shows the current snapshot name, so these names appear in some screenshots.
 
 ## Rules
 

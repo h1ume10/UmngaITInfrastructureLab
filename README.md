@@ -6,7 +6,7 @@ Umnga Local Municipality is fictional. It has about 60 office staff in seven dep
 
 ## What exists now
 
-Three servers on an isolated network, one domain, seven departments with their own groups and file shares, and a PowerShell script that onboards new staff from a CSV file. The domain holds 17 users. All five projects are complete.
+Three servers on an isolated network, one domain, seven departments with their own groups and file shares, a PowerShell script that onboards new staff from a CSV file, and a care routine for the file server that covers updates, logs, performance, firewall, antivirus and backup. The domain holds 17 users. All six projects are complete.
 
 ## Architecture
 
@@ -56,6 +56,14 @@ flowchart TB
     end
     DC1 -->|"hosts"| PS1
     PS1 -->|"creates 10 users in their OUs and adds each to its GG_ group"| DEP
+    subgraph CARE["Server care on UMNGA-SVR1"]
+        FW["Firewall rule: port 80 only from 192.168.20.0/24, Domain profile"]
+        DEF["Microsoft Defender: real time protection, EICAR test detected"]
+        BKP["Drive F: 3 GB backup disk, Windows Server Backup, one file restored"]
+    end
+    SVR1 -->|"protected by"| FW
+    SVR1 -->|"scanned by"| DEF
+    SVR1 -->|"backed up to"| BKP
 ```
 
 ## Projects
@@ -67,8 +75,9 @@ flowchart TB
 | 03 | [Core services](03%20Core%20services) | Reverse DNS, DHCP, an internal web page and Remote Desktop Services for the ICT group |
 | 04 | [Departmental file server](04%20Departmental%20file%20server) | A mirrored storage pool and seven department shares locked down with NTFS |
 | 05 | [Onboarding automation](05%20Onboarding%20automation) | A PowerShell script that creates new staff from a CSV, safely and repeatably |
+| 06 | [Server care routine](06%20Server%20care%20routine) | A routine for updates, logs, performance, firewall, Defender and backup, with a restore test |
 
-All five projects share the [naming and IP standard](docs/Naming%20and%20IP%20standard.md), which grew with them.
+All six projects share the [naming and IP standard](docs/Naming%20and%20IP%20standard.md), which grew with them.
 
 ## The story so far
 
@@ -92,6 +101,10 @@ I pooled three small virtual disks with Storage Spaces and made a mirrored, thin
 
 Creating accounts was the most repeated job, so I turned it into a script. New-UmngaStaff.ps1 reads a CSV of new staff. For each row it checks that the department OU and group exist and that the user does not, then creates the user, adds the user to the department group and forces a password change at first sign in. It previews with WhatIf, skips existing users, reports a bad row and carries on, and writes a timestamped log. I tested it with a twelve row list that held one existing user and one department that does not exist. The preview said it would create ten, the real run created ten, and the second run created none and skipped eleven. The directory then held 17 users.
 
+### 06 Server care routine
+
+A server that nobody looks after fails in quiet ways, so I wrote down what to look at on UMNGA-SVR1 and proved each check once. Updates came through a temporary NAT card that I removed afterwards. I built a custom view in Event Viewer and found where Windows records an update install. A baseline only counted when the server was idle, which took a long wait for Windows to finish servicing, and I kept the busy captures to show the difference. The built in web rule was open to every address, so I replaced it with one that only accepts UmngaNet, and proved it both ways. Defender caught the EICAR test string and left events 1116 and 1117. Windows Server Backup copied a test folder to a separate disk, and a file I deleted on purpose came back with its text. The README is honest about what is missing: one cumulative update I never saw installed, a backup on the same laptop, and several events I did not diagnose.
+
 ## How each project is laid out
 
 Every project folder has the same parts:
@@ -100,13 +113,15 @@ Every project folder has the same parts:
 2. evidence: screenshots and a captions file
 3. Troubleshooting log.md: what broke, what caused it, how I fixed it, and what I did not record
 4. scripts: only where I wrote and ran a script (project 05)
+5. a one page deliverable where the project ends in a routine (project 06)
 
 Each README has a Limitations section. I list what I did not test, such as a real sign in or a failed mirror disk, and I do not let a calculation or a console view stand in for a test.
 
 ## Planned follow ups
 
 1. Test DHCP, the department shares and a new user sign in from a Windows 11 client, which does not exist in the lab yet.
-2. Add a project on server care: updates, event logs, a performance baseline, firewall, Defender, and backup with a restore test.
+2. Patch and back up UMNGA-DC1 and UMNGA-CORE1 with the same routine, and move the backup copy off the laptop.
+3. Find out what the Kernel-Boot and Hyper-V events mean before the Hyper-V project.
 
 ## Safety rules for this repository
 
